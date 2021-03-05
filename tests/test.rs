@@ -24,7 +24,7 @@ mod tests {
 
         let left = uncompressed.len();
         let right = TEST_STRING.len();
-        assert!(left >= right, "left = {}, right = {}", left, right);
+        assert!(left == right, "left = {}, right = {}", left, right);
         assert_eq!(uncompressed, TEST_STRING.as_bytes());
     }
 }
