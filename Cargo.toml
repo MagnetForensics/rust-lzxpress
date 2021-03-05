@@ -1,0 +1,16 @@
+[package]
+name = "rust-lzxpress"
+version = "0.1.0"
+authors = ["Matt Suiche <msuiche@comae.com>"]
+description = "Simple interface for Microsoft LZXpress decompression."
+edition = "2018"
+readme = "README.md"
+keywords = ["lxpress", "decompression", "ms-xca"]
+repository = "https://github.com/comaeio/rust-lzxpress"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "lzxpress"
+
+[dependencies]
