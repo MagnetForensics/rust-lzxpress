@@ -1,7 +1,6 @@
 extern crate lzxpress;
 
 use std::str;
-// use lzxpress::error::LzxpressError;
 
 const TEST_STRING: &'static str = "this is a test. and this is a test too\0\0\0\0";
 const TEST_DATA: &'static [u8] = &[ 0x00, 0x20, 0x00, 0x04, 0x74, 0x68, 0x69, 0x73,
@@ -16,7 +15,7 @@ mod tests {
 
     #[test]
     fn test_decompress1() {
-        let uncompressed = lzxpress::decompress(TEST_DATA).unwrap();
+        let uncompressed = lzxpress::data::decompress(TEST_DATA).unwrap();
 
         if let Ok(s) = str::from_utf8(&uncompressed) {
             println!("{}", s);
