@@ -6,13 +6,12 @@ pub fn decompress(
     in_buf: &[u8]
 ) -> Result<Vec<u8>, Error>
 {
-    let mut out_idx: usize     = 0;
-    let mut in_idx: usize      = 0;
+    let mut out_idx:    usize = 0;
+    let mut in_idx:     usize = 0;
+    let mut nibble_idx: usize = 0;
 
-    let mut indicator: u32     = 0;
+    let mut indicator:     u32 = 0;
     let mut indicator_bit: u32 = 0;
-
-    let mut nibble_idx: usize  = 0;
 
     let mut length: usize;
     let mut offset: usize;
