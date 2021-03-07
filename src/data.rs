@@ -1,4 +1,5 @@
 use std::mem;
+use std::cmp;
 
 pub use crate::error::Error;
 
@@ -119,4 +120,211 @@ pub fn decompress(
     }
 
     Ok(out_buf)
+}
+
+pub fn compress(
+    uncompressed: &[u8]
+) -> Result<Vec<u8>, Error>
+{
+
+    let mut uncompressed_pos: usize = 0;
+    let mut compressed_pos:   usize;
+    let mut byte_left:        usize;
+
+    let mut max_offset:  usize;
+    let mut best_offset: usize;
+
+    let mut max_len:  usize;
+    let mut best_len: usize;
+
+    let mut indic:        u32 = 0;
+    let mut indic_pos:    usize;
+    let mut indic_bit:    u32 = 0;
+    let mut nibble_index: usize = 0;
+    
+    let mut metadata_size: usize;
+    let mut metadata:      usize;
+    let mut dest_offset:   usize;
+
+    let mut str1_offset: usize;
+    let mut str2_offset: usize;
+
+    let mut compressed: Vec<u8> = Vec::new();
+
+    // Metadata placeholder
+    compressed.push(0);
+    compressed.push(0);
+    compressed.push(0);
+    compressed.push(0);
+
+    compressed_pos = mem::size_of::<u32>();
+    indic_pos = 0;
+
+    byte_left = uncompressed.len();
+
+    while byte_left >= 3 {
+        let mut found: bool = false;
+
+        max_offset = uncompressed_pos;
+
+        str1_offset = uncompressed_pos;
+
+        best_len = 2;
+        best_offset = 0;
+
+        max_offset = cmp::min(0x1FFF, max_offset);
+
+        // search for the longest match in the window for the lookahead buffer
+        for offset in 1..=max_offset {
+            let len: usize = 0;
+            str2_offset = str1_offset - offset;
+
+            // maximum len we can encode into metadata
+            max_len = cmp::min(255 + 15 + 7 + 3, byte_left);
+
+            for len in 0..max_len {
+                if uncompressed[str1_offset + len] != uncompressed[str2_offset + len] {
+                    break;
+                }
+            }
+
+            // We check if len is better than the value found before, including the
+            // sequence of identical bytes
+            if len > best_len {
+                found = true;
+                best_len = len;
+                best_offset = offset;
+            }
+        }
+
+        if found {
+            metadata_size = 0;
+            dest_offset = compressed_pos;
+
+            if best_len < 10 {
+                // Classical meta-data
+                metadata = ((best_offset - 1) << 3) | (best_len - 3);
+                compressed[dest_offset + metadata_size] = metadata as u8;
+                compressed[dest_offset + metadata_size + 1] = (metadata >> 8) as u8;
+                metadata_size = metadata_size + mem::size_of::<u16>();
+            } else {
+                metadata = ((best_offset - 1) << 3) | 7;
+                compressed[dest_offset + metadata_size] = metadata as u8;
+                compressed[dest_offset + metadata_size + 1] = (metadata >> 8) as u8;
+                metadata_size = metadata_size + mem::size_of::<u16>();
+
+                if best_len < (15 + 7 + 3) {
+                    // Shared byte
+                    if nibble_index == 0 {
+                        compressed[compressed_pos + metadata_size] = ((best_len - (3 + 7)) & 0xF) as u8;
+                        metadata_size = metadata_size + mem::size_of::<u8>();
+                    } else {
+                        compressed[nibble_index] = compressed[nibble_index] & 0xF;
+                        compressed[nibble_index] = compressed[nibble_index] | ((best_len - (3 + 7)) * 16) as u8;
+                    }
+                } else if best_len < (3 + 7 + 15 + 255) {
+                    // Shared byte
+                    if nibble_index == 0 {
+                        compressed[compressed_pos + metadata_size] = 15;
+                        metadata_size = metadata_size + mem::size_of::<u8>();
+                    } else {
+                        compressed[nibble_index] = compressed[nibble_index] & 0xF;
+                        compressed[nibble_index] = compressed[nibble_index] | (15 * 16);
+                    }
+
+                    // Additional best_len
+                    compressed[compressed_pos + metadata_size] = (best_len - (3 + 7 + 15)) as u8;
+                    metadata_size = metadata_size + mem::size_of::<u8>();
+                } else {
+                    // Shared byte
+                    if nibble_index == 0 {
+                        compressed[compressed_pos + metadata_size] = compressed[compressed_pos + metadata_size] | 15;
+                        metadata_size = metadata_size + mem::size_of::<u8>();
+                    } else {
+                        compressed[nibble_index] = compressed[nibble_index] | (15 << 4);
+                    }
+
+                    // Additional best_len
+                    compressed[compressed_pos + metadata_size] = 255;
+                    metadata_size = metadata_size + mem::size_of::<u8>();
+
+                    compressed[compressed_pos + metadata_size] = (best_len - 3) as u8;
+                    compressed[compressed_pos + metadata_size + 1] = ((best_len - 3) >> 8) as u8;
+                    metadata_size = metadata_size + mem::size_of::<u16>();
+                }
+            }
+
+            indic = indic | (1 << (32 - ((indic_bit % 32) + 1)));
+
+            if best_len > 9 {
+                if nibble_index == 0 {
+                    nibble_index = compressed_pos + mem::size_of::<u16>();
+                } else {
+                    nibble_index = 0;
+                }
+            }
+
+            compressed_pos = compressed_pos + metadata_size;
+            uncompressed_pos = uncompressed_pos + best_len;
+            byte_left = byte_left - best_len;
+        } else {
+            compressed.push(uncompressed[uncompressed_pos]);
+            compressed_pos = compressed_pos + 1;
+            uncompressed_pos = uncompressed_pos + 1;
+
+            byte_left = byte_left - 1;
+        }
+
+        indic_bit = indic_bit + 1;
+
+        if ((indic_bit - 1) % 32) > (indic_bit % 32) {
+            compressed[indic_pos + 0] = indic as u8;
+            compressed[indic_pos + 1] = (indic >> 8) as u8;
+            compressed[indic_pos + 2] = (indic >> 16) as u8;
+            compressed[indic_pos + 3] = (indic >> 24) as u8;
+
+            indic = 0;
+            indic_pos = compressed_pos;
+            // Metadata placeholder
+            compressed.push(0);
+            compressed.push(0);
+            compressed.push(0);
+            compressed.push(0);
+            compressed_pos = compressed_pos + mem::size_of::<u32>();
+        }
+    }
+
+    while uncompressed_pos < uncompressed.len() {
+        compressed.push(uncompressed[uncompressed_pos]);
+        indic_bit = indic_bit + 1;
+
+        uncompressed_pos = uncompressed_pos + 1;
+        compressed_pos = compressed_pos + 1;
+        if ((indic_bit - 1) % 32) > (indic_bit % 32) {
+            compressed[indic_pos + 0] = indic as u8;
+            compressed[indic_pos + 1] = (indic >> 8) as u8;
+            compressed[indic_pos + 2] = (indic >> 16) as u8;
+            compressed[indic_pos + 3] = (indic >> 24) as u8;
+
+            indic = 0;
+            indic_pos = compressed_pos;
+            compressed_pos = compressed_pos + mem::size_of::<u32>();
+        }
+    }
+
+    if (indic_bit % 32) > 0 {
+        while (indic_bit % 32) != 0 {
+            indic |= 0 << (32 - ((indic_bit % 32) + 1));
+            indic_bit = indic_bit + 1;
+        }
+
+        compressed[indic_pos + 0] = indic as u8;
+        compressed[indic_pos + 1] = (indic >> 8) as u8;
+        compressed[indic_pos + 2] = (indic >> 16) as u8;
+        compressed[indic_pos + 3] = (indic >> 24) as u8;
+
+        // compressed_pos = compressed_pos + mem::size_of::<u32>();
+    }
+
+    Ok(compressed)
 }
