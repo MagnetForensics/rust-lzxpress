@@ -21,7 +21,7 @@ compress image, audio, or video data. Between the trade-offs of compressed size 
 heavily emphasizes low CPU cost. It is mainly used by Microsoft features or protocols such as Microsoft Windows hibernation file, [Microsoft SMB protocol](https://ftp.samba.org/pub/unpacked/samba_master/lib/compression/lzxpress.c)
 or even [Microsoft Windows 10 compressed memory management](https://www.fireeye.com/content/dam/fireeye-www/blog/pdfs/finding-evil-in-windows-10-compressed-memory-wp.pdf).
 
-`decompress` is an easy to use function for simple use cases.
+`decompress`/`compress` are an easy to use functions for simple use cases.
 
 ### Example ###
 Cargo.toml:
@@ -35,6 +35,8 @@ extern crate lzxpress;
 
 use lzxpress;
 
+const TEST_STRING: &'static str = "this is a test. and this is a test too";
+
 const TEST_DATA: &'static [u8] = &[ 0x00, 0x20, 0x00, 0x04, 0x74, 0x68, 0x69, 0x73,
                 0x20, 0x10, 0x00, 0x61, 0x20, 0x74, 0x65, 0x73,
                 0x74, 0x2E, 0x20, 0x61, 0x6E, 0x64, 0x20, 0x9F,
@@ -45,6 +47,12 @@ fn main() {
     let uncompressed = lzxpress::data::decompress(TEST_DATA).unwrap();
 
     if let Ok(s) = str::from_utf8(&uncompressed) {
+        println!("{}", s);
+    }
+
+    let compressed = lzxpress::data::compress(TEST_STRING.as_bytes()).unwrap();
+    let uncompressed2 = lzxpress::data::decompress(compressed.as_slice()).unwrap();
+    if let Ok(s) = str::from_utf8(&uncompressed2) {
         println!("{}", s);
     }
 }
