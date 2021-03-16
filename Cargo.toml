@@ -9,6 +9,7 @@ keywords = ["lxpress", "decompression", "ms-xca"]
 repository = "https://github.com/comaeio/rust-lzxpress"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+license = "MIT"
 
 [lib]
 name = "lzxpress"
