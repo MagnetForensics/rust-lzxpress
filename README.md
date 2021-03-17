@@ -28,7 +28,7 @@ or even [Microsoft Windows 10 compressed memory management](https://www.fireeye.
 Cargo.toml:
 ```toml
 [dependencies]
-rust-lzxpress = "0.1.0"
+rust-lzxpress = "0.1.1"
 ```
 main.rs:
 ```Rust
