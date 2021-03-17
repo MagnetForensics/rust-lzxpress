@@ -254,9 +254,7 @@ pub fn compress(
                 }
             }
 
-            println!("indic_bit = {}", indic_bit);
             indic = indic | (1 << (32 - ((indic_bit % 32) + 1)));
-            println!("indic = {}", indic);
 
             if best_len > 9 {
                 if nibble_index == 0 {
