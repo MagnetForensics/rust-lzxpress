@@ -1,4 +1,5 @@
 # rust-lzxpress
+![status](https://github.com/comaeio/rust-lzxpress/actions/workflows/rust.yml/badge.svg)
 
 ## [MS-XCA]: Xpress Compression Algorithm
 ### Introduction
