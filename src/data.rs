@@ -169,7 +169,7 @@ pub fn compress(
 
         str1_off = in_idx;
 
-        best_len = 2;
+        best_len = 3;
         best_off = 0;
 
         max_off = cmp::min(0x1FFF, max_off);
@@ -254,7 +254,9 @@ pub fn compress(
                 }
             }
 
+            println!("indic_bit = {}", indic_bit);
             indic = indic | (1 << (32 - ((indic_bit % 32) + 1)));
+            println!("indic = {}", indic);
 
             if best_len > 9 {
                 if nibble_index == 0 {

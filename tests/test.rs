@@ -12,6 +12,13 @@ const TEST_DATA: &'static [u8] = &[
 
 const TEST_OSSFUZZ_20083_DATA: &'static [u8] = include_bytes!("clusterfuzz-testcase-minimized-fuzz_ndr_drsuapi_TYPE_OUT-5724999789051904");
 
+const TEST_STRING2: &'static str = "abcdefghijklmnopqrstuvwxyz";
+const TEST_DATA2: &'static [u8] = &[ 
+                0x00, 0x00, 0x00, 0x00, 0x61, 0x62, 0x63, 0x64,
+                0x65, 0x66, 0x67, 0x68, 0x69, 0x6a, 0x6b, 0x6c,
+                0x6d, 0x6e, 0x6f, 0x70, 0x71, 0x72, 0x73, 0x74,
+                0x75, 0x76, 0x77, 0x78, 0x79, 0x7a ];
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -51,5 +58,19 @@ mod tests {
         assert_eq!(uncompressed, TEST_STRING.as_bytes());
         assert!(uncompressed.len() == TEST_STRING.len(), "uncompressed.len = {}, TEST_STRING.len = {}", uncompressed.len(), TEST_STRING.len());
 
+    }
+
+    #[test]
+    fn test_compress2() {
+        let compressed = lzxpress::data::compress(TEST_STRING2.as_bytes()).unwrap();
+
+        assert!(compressed.len() == TEST_DATA2.len(), "compressed.len = {}, TEST_DATA2.len = {}", compressed.len(), TEST_DATA2.len());
+        assert_eq!(compressed, TEST_DATA2);
+
+        let uncompressed = lzxpress::data::decompress(compressed.as_slice()).unwrap();
+        if let Ok(s) = str::from_utf8(&uncompressed) {
+            println!("{}", s);
+        }
+        assert_eq!(uncompressed, TEST_STRING2.as_bytes());
     }
 }
