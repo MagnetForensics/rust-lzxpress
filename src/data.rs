@@ -31,7 +31,7 @@ pub fn decompress(
             indicator_bit = 32;
         }
 
-        indicator_bit = indicator_bit - 1;
+        indicator_bit -= 1;
 
         // Check whether the bit specified by indicator_bit is set or not
         // set in indicator. For example, if indicator_bit has value 4
@@ -53,7 +53,7 @@ pub fn decompress(
             length = usize::from(in_buf[in_idx + 1]) << 8
                     | usize::from(in_buf[in_idx]);
 
-            in_idx = in_idx + mem::size_of::<u16>();
+            in_idx += mem::size_of::<u16>();
 
             offset = length / 8;
             length = length % 8;
@@ -68,7 +68,7 @@ pub fn decompress(
 
                     length = (in_buf[in_idx] % 16).into();
 
-                    in_idx = in_idx + mem::size_of::<u8>();
+                    in_idx += mem::size_of::<u8>();
                 } else {
                     if nibble_idx >= in_buf.len() {
                         return Err(Error::MemLimit);
@@ -85,7 +85,7 @@ pub fn decompress(
 
                     length = in_buf[in_idx].into();
 
-                    in_idx = in_idx + mem::size_of::<u8>();
+                    in_idx += mem::size_of::<u8>();
 
                     if length == 255 {
                         if (in_idx + 1) >= in_buf.len() {
@@ -95,16 +95,16 @@ pub fn decompress(
                         length = usize::from(in_buf[in_idx + 1]) << 8
                                 | usize::from(in_buf[in_idx]);
 
-                        in_idx = in_idx + mem::size_of::<u16>();
+                        in_idx += mem::size_of::<u16>();
 
-                        length = length - (15 + 7);
+                        length -= 15 + 7;
                     }
-                    length = length + 15;
+                    length -= 15;
                 }
-                length = length + 7;
+                length += 7;
             }
 
-            length = length + 3;
+            length += 3;
 
             while length != 0 {
                 if (offset + 1) > out_idx {
@@ -113,8 +113,8 @@ pub fn decompress(
 
                 out_buf.push(out_buf[out_idx - offset - 1]);
 
-                out_idx = out_idx + mem::size_of::<u8>();
-                length = length - mem::size_of::<u8>();
+                out_idx += mem::size_of::<u8>();
+                length -= mem::size_of::<u8>();
             }
         }
     }
@@ -206,18 +206,18 @@ pub fn compress(
                 metadata = ((best_off - 1) << 3) | (best_len - 3);
                 out_buf[dest_off + metadata_size] = metadata as u8;
                 out_buf[dest_off + metadata_size + 1] = (metadata >> 8) as u8;
-                metadata_size = metadata_size + mem::size_of::<u16>();
+                metadata_size += mem::size_of::<u16>();
             } else {
                 metadata = ((best_off - 1) << 3) | 7;
                 out_buf[dest_off + metadata_size] = metadata as u8;
                 out_buf[dest_off + metadata_size + 1] = (metadata >> 8) as u8;
-                metadata_size = metadata_size + mem::size_of::<u16>();
+                metadata_size += mem::size_of::<u16>();
 
                 if best_len < (15 + 7 + 3) {
                     // Shared byte
                     if nibble_index == 0 {
                         out_buf[out_idx + metadata_size] = ((best_len - (3 + 7)) & 0xF) as u8;
-                        metadata_size = metadata_size + mem::size_of::<u8>();
+                        metadata_size += mem::size_of::<u8>();
                     } else {
                         out_buf[nibble_index] = out_buf[nibble_index] & 0xF;
                         out_buf[nibble_index] = out_buf[nibble_index] | ((best_len - (3 + 7)) * 16) as u8;
@@ -226,7 +226,7 @@ pub fn compress(
                     // Shared byte
                     if nibble_index == 0 {
                         out_buf[out_idx + metadata_size] = 15;
-                        metadata_size = metadata_size + mem::size_of::<u8>();
+                        metadata_size += mem::size_of::<u8>();
                     } else {
                         out_buf[nibble_index] = out_buf[nibble_index] & 0xF;
                         out_buf[nibble_index] = out_buf[nibble_index] | (15 * 16);
@@ -234,27 +234,27 @@ pub fn compress(
 
                     // Additional best_len
                     out_buf[out_idx + metadata_size] = (best_len - (3 + 7 + 15)) as u8;
-                    metadata_size = metadata_size + mem::size_of::<u8>();
+                    metadata_size += mem::size_of::<u8>();
                 } else {
                     // Shared byte
                     if nibble_index == 0 {
                         out_buf[out_idx + metadata_size] = out_buf[out_idx + metadata_size] | 15;
-                        metadata_size = metadata_size + mem::size_of::<u8>();
+                        metadata_size += mem::size_of::<u8>();
                     } else {
                         out_buf[nibble_index] = out_buf[nibble_index] | (15 << 4);
                     }
 
                     // Additional best_len
                     out_buf[out_idx + metadata_size] = 255;
-                    metadata_size = metadata_size + mem::size_of::<u8>();
+                    metadata_size += mem::size_of::<u8>();
 
                     out_buf[out_idx + metadata_size] = (best_len - 3) as u8;
                     out_buf[out_idx + metadata_size + 1] = ((best_len - 3) >> 8) as u8;
-                    metadata_size = metadata_size + mem::size_of::<u16>();
+                    metadata_size += mem::size_of::<u16>();
                 }
             }
 
-            indic = indic | (1 << (32 - ((indic_bit % 32) + 1)));
+            indic |= 1 << (32 - ((indic_bit % 32) + 1));
 
             if best_len > 9 {
                 if nibble_index == 0 {
@@ -264,18 +264,18 @@ pub fn compress(
                 }
             }
 
-            out_idx = out_idx + metadata_size;
-            in_idx = in_idx + best_len;
-            byte_left = byte_left - best_len;
+            out_idx += metadata_size;
+            in_idx += best_len;
+            byte_left -= best_len;
         } else {
             out_buf.push(in_buf[in_idx]);
-            out_idx = out_idx + 1;
-            in_idx = in_idx + 1;
+            out_idx += 1;
+            in_idx += 1;
 
-            byte_left = byte_left - 1;
+            byte_left -= 1;
         }
 
-        indic_bit = indic_bit + 1;
+        indic_bit += 1;
 
         if ((indic_bit - 1) % 32) > (indic_bit % 32) {
             out_buf[indic_pos + 0] = indic as u8;
@@ -296,10 +296,10 @@ pub fn compress(
 
     while in_idx < in_buf.len() {
         out_buf.push(in_buf[in_idx]);
-        indic_bit = indic_bit + 1;
+        indic_bit += 1;
 
-        in_idx = in_idx + 1;
-        out_idx = out_idx + 1;
+        in_idx += 1;
+        out_idx += 1;
         if ((indic_bit - 1) % 32) > (indic_bit % 32) {
             out_buf[indic_pos + 0] = indic as u8;
             out_buf[indic_pos + 1] = (indic >> 8) as u8;
@@ -314,8 +314,8 @@ pub fn compress(
 
     if (indic_bit % 32) > 0 {
         while (indic_bit % 32) != 0 {
-            indic |= 0 << (32 - ((indic_bit % 32) + 1));
-            indic_bit = indic_bit + 1;
+            indic |= 1 << (32 - ((indic_bit % 32) + 1));
+            indic_bit += 1;
         }
 
         out_buf[indic_pos + 0] = indic as u8;
