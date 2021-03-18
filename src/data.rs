@@ -21,6 +21,9 @@ pub fn decompress(
 
     while in_idx < in_buf.len() {
         if indicator_bit == 0 {
+            if (in_idx + 3) >= in_buf.len() {
+                return Err(Error::MemLimit);
+            }
             indicator = u32::from(in_buf[in_idx + 3]) << 24
                         | u32::from(in_buf[in_idx + 2]) << 16
                         | u32::from(in_buf[in_idx + 1]) << 8
