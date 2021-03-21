@@ -1,7 +1,6 @@
 extern crate lzxpress;
 
 use std::str;
-use lzxpress::error::Error;
 
 const TEST_STRING: &'static str = "this is a test. and this is a test too";
 const TEST_DATA: &'static [u8] = &[ 
@@ -10,7 +9,10 @@ const TEST_DATA: &'static [u8] = &[
                 0x74, 0x2E, 0x20, 0x61, 0x6E, 0x64, 0x20, 0x9F,
                 0x00, 0x04, 0x20, 0x74, 0x6F, 0x6F ];
 
+// Issue 19382: samba:fuzz_lzxpress: Heap-buffer-overflow in lzxpress_decompress
+// https://bugs.chromium.org/p/oss-fuzz/issues/detail?id=20083&q=samba&can=2
 const TEST_OSSFUZZ_20083_DATA: &'static [u8] = include_bytes!("clusterfuzz-testcase-minimized-fuzz_ndr_drsuapi_TYPE_OUT-5724999789051904");
+const TEST_OSSFUZZ_5698056963227648_DATA: &'static [u8] = include_bytes!("clusterfuzz-testcase-minimized-fuzz_ndr_drsuapi_TYPE_OUT-5698056963227648");
 
 const TEST_STRING2: &'static str = "abcdefghijklmnopqrstuvwxyz";
 const TEST_DATA2: &'static [u8] = &[ 
@@ -36,11 +38,21 @@ mod tests {
     }
 
     #[test]
-    fn test_decompress2() {
+    fn test_decompress2_err() {
         let result = lzxpress::data::decompress(TEST_OSSFUZZ_20083_DATA);
 
         match result {
-            Err(Error::CorruptedData) => assert!(true),
+            Err(_e) => assert!(true),
+            _ => panic!("This test should fail because of failed data.")
+        }
+    }
+
+    #[test]
+    fn test_decompress3_err() {
+        let result = lzxpress::data::decompress(TEST_OSSFUZZ_5698056963227648_DATA);
+
+        match result {
+            Err(_e) => assert!(true),
             _ => panic!("This test should fail because of failed data.")
         }
     }

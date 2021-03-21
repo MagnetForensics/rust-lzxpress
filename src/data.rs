@@ -3,6 +3,17 @@ use std::cmp;
 
 pub use crate::error::Error;
 
+macro_rules! store32le{
+       ($dst:expr,$idx:expr,$val:expr)=>{
+           {
+            $dst[$idx + 0] = $val as u8;
+            $dst[$idx + 1] = ($val >> 8) as u8;
+            $dst[$idx + 2] = ($val >> 16) as u8;
+            $dst[$idx + 3] = ($val >> 24) as u8;
+           }
+       }
+   }
+
 pub fn decompress(
     in_buf: &[u8]
 ) -> Result<Vec<u8>, Error>
@@ -24,6 +35,7 @@ pub fn decompress(
             if (in_idx + 3) >= in_buf.len() {
                 return Err(Error::MemLimit);
             }
+
             indicator = u32::from(in_buf[in_idx + 3]) << 24
                         | u32::from(in_buf[in_idx + 2]) << 16
                         | u32::from(in_buf[in_idx + 1]) << 8
@@ -281,10 +293,7 @@ pub fn compress(
         indic_bit += 1;
 
         if ((indic_bit - 1) % 32) > (indic_bit % 32) {
-            out_buf[indic_pos + 0] = indic as u8;
-            out_buf[indic_pos + 1] = (indic >> 8) as u8;
-            out_buf[indic_pos + 2] = (indic >> 16) as u8;
-            out_buf[indic_pos + 3] = (indic >> 24) as u8;
+            store32le!(out_buf, indic_pos, indic);
 
             indic = 0;
             indic_pos = out_idx;
@@ -304,10 +313,7 @@ pub fn compress(
         in_idx += 1;
         out_idx += 1;
         if ((indic_bit - 1) % 32) > (indic_bit % 32) {
-            out_buf[indic_pos + 0] = indic as u8;
-            out_buf[indic_pos + 1] = (indic >> 8) as u8;
-            out_buf[indic_pos + 2] = (indic >> 16) as u8;
-            out_buf[indic_pos + 3] = (indic >> 24) as u8;
+            store32le!(out_buf, indic_pos, indic);
 
             indic = 0;
             indic_pos = out_idx;
@@ -321,10 +327,7 @@ pub fn compress(
             indic_bit += 1;
         }
 
-        out_buf[indic_pos + 0] = indic as u8;
-        out_buf[indic_pos + 1] = (indic >> 8) as u8;
-        out_buf[indic_pos + 2] = (indic >> 16) as u8;
-        out_buf[indic_pos + 3] = (indic >> 24) as u8;
+        store32le!(out_buf, indic_pos, indic);
 
         // out_idx = out_idx + mem::size_of::<u32>();
     }
