@@ -16,13 +16,15 @@ This algorithm does not depend on any other algorithms or protocols. It is a com
 This algorithm is appropriate for any protocol that transfers large amounts of easily compressible textlike data, such as HTML, source code, or log files. Protocols use this algorithm to reduce the number of bits transferred.
 
 ## This library
-This crate provides a simple interface to Microsoft Xpress compression algorithm.  Microsoft Xpress Compression Algorith is more commonly known
+This crate provides a simple interface to Microsoft Xpress compression algorithm.  Microsoft Xpress Compression Algorithm is more commonly known
 as LZXpress. This algorithm efficiently compresses data that contain repeated byte sequences. It is not designed to
 compress image, audio, or video data. Between the trade-offs of compressed size and CPU cost, it
 heavily emphasizes low CPU cost. It is mainly used by Microsoft features or protocols such as Microsoft Windows hibernation file, [Microsoft SMB protocol](https://ftp.samba.org/pub/unpacked/samba_master/lib/compression/lzxpress.c)
 or even [Microsoft Windows 10 compressed memory management](https://www.fireeye.com/content/dam/fireeye-www/blog/pdfs/finding-evil-in-windows-10-compressed-memory-wp.pdf).
 
 `decompress`/`compress` are an easy to use functions for simple use cases.
+
+By default, LZXpress on Windows uses the Plain LZ77 Algorithm. You can read more about it in the [MS-XCA] documentation under the `2.4	Plain LZ77 Decompression Algorithm Details` and `2.3	Plain LZ77 Compression Algorithm Details` sections.
 
 ### Example ###
 Cargo.toml:
