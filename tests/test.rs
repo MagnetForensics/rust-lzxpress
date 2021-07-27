@@ -27,6 +27,19 @@ const TEST_DATA3: &'static [u8] = &[
                 0xff, 0xff, 0xff, 0x1f, 0x61, 0x62, 0x63, 0x17,
                 0x00, 0x0f, 0xff, 0x26, 0x01 ];
 
+
+const TEST_LZNT1_STRING1: &'static str = "F# F# G A A G F# E D D E F# F# E E F# F# G A A G F# E D D E F# E D D E E F# D E F# G F# D E F# G F# E D E A F# F# G A A G F# E D D E F# E D D\0";
+const TEST_LZNT1_DATA1: &'static [u8] = &[
+    0x38, 0xb0, 0x88, 0x46, 0x23, 0x20, 0x00, 0x20,
+    0x47, 0x20, 0x41, 0x00, 0x10, 0xa2, 0x47, 0x01,
+    0xa0, 0x45, 0x20, 0x44, 0x00, 0x08, 0x45, 0x01,
+    0x50, 0x79, 0x00, 0xc0, 0x45, 0x20, 0x05, 0x24,
+    0x13, 0x88, 0x05, 0xb4, 0x02, 0x4a, 0x44, 0xef,
+    0x03, 0x58, 0x02, 0x8c, 0x09, 0x16, 0x01, 0x48,
+    0x45, 0x00, 0xbe, 0x00, 0x9e, 0x00, 0x04, 0x01,
+    0x18, 0x90, 0x00
+];
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -137,5 +150,17 @@ mod tests {
             println!("{}", s);
         }
         assert_eq!(uncompressed, TEST_STRING3.as_bytes());
+    }
+
+    #[test]
+    fn test_lznt1_decompress1() {
+        let uncompressed = lzxpress::lznt1::decompress(TEST_LZNT1_DATA1).unwrap();
+
+        if let Ok(s) = str::from_utf8(&uncompressed) {
+            println!("{}", s);
+        }
+
+        assert!(uncompressed.len() == TEST_LZNT1_STRING1.len(), "uncompressed.len = {}, TEST_LZNT1_STRING1.len = {}", uncompressed.len(), TEST_LZNT1_STRING1.len());
+        assert_eq!(uncompressed, TEST_LZNT1_STRING1.as_bytes());
     }
 }
