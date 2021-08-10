@@ -1,5 +1,4 @@
 use std::mem;
-use std::str;
 
 pub use crate::error::Error;
 
