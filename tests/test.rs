@@ -40,6 +40,9 @@ const TEST_LZNT1_DATA1: &'static [u8] = &[
     0x18, 0x90, 0x00
 ];
 
+const TEST_LZNT1_COMPRESSED_DATA: &'static [u8] = include_bytes!("block1.compressed.bin");
+const TEST_LZNT1_UNCOMPRESSED_DATA: &'static [u8] = include_bytes!("block1.uncompressed.bin");
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -162,5 +165,16 @@ mod tests {
 
         assert!(uncompressed.len() == TEST_LZNT1_STRING1.len(), "uncompressed.len = {}, TEST_LZNT1_STRING1.len = {}", uncompressed.len(), TEST_LZNT1_STRING1.len());
         assert_eq!(uncompressed, TEST_LZNT1_STRING1.as_bytes());
+    }
+
+    #[test]
+    fn test_lznt1_decompress2() {
+        let uncompressed = lzxpress::lznt1::decompress(TEST_LZNT1_COMPRESSED_DATA).unwrap();
+        // let c: &[u8] = &uncompressed;
+        // let mut output = File::create("rust.uncompressed.bin").expect("Unable to open");
+        // output.write(c).expect("Unable to open");
+
+        assert!(uncompressed.len() == 0x100000, "uncompressed.len = {} (expected len = 0x10000)", uncompressed.len());
+        assert_eq!(uncompressed, TEST_LZNT1_UNCOMPRESSED_DATA);
     }
 }

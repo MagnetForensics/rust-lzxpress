@@ -20,22 +20,25 @@ pub fn decompress(
     let mut out_idx: usize = 0;
     let mut in_idx:  usize = 0;
 
-    let mut header: usize;
-    let mut length: usize;
-    let mut offset: usize;
+    let mut header:     usize;
+    let mut length:     usize;
+    let mut block_len:  usize;
+    let mut offset:     usize;
 
     let mut out_buf: Vec<u8> = Vec::new();
-
+    let mut block_id = 0;
     while in_idx < in_buf.len() {
+        let in_chunk_base = in_idx;
         load16le!(header, in_buf, in_idx);
         in_idx += mem::size_of::<u16>();
-        length = (header & 0xfff) + 1;
-
-        if length > (in_buf.len() - in_idx) {
+        block_len = (header & 0xfff) + 1;
+        if block_len > (in_buf.len() - in_idx) {
             return Err(Error::MemLimit);
         } else {
             if header & LZNT1_COMPRESSED_FLAG != 0 {
-                for _i in 0..length {
+                let in_base_idx = in_idx;
+                let out_base_idx = out_idx;
+                while (in_idx - in_base_idx) < block_len {
                     if in_idx >= in_buf.len() {
                         break;
                     }
@@ -44,7 +47,7 @@ pub fn decompress(
 
                     for n in 0..8 {
                         if ((flags >> n) & 1) == 0 {
-                            if in_idx >= in_buf.len() {
+                            if in_idx >= in_buf.len() || (in_idx - in_base_idx) >= block_len {
                                 break;
                             }
                             out_buf.push(in_buf[in_idx]);
@@ -52,13 +55,14 @@ pub fn decompress(
                             in_idx += mem::size_of::<u8>();
                         } else {
                             let flag;
-                            if in_idx >= in_buf.len() {
+                            if in_idx >= in_buf.len() || (in_idx - in_base_idx) >= block_len {
                                 break;
                             }
                             load16le!(flag, in_buf, in_idx);
                             in_idx += mem::size_of::<u16>();
 
-                            let mut pos = out_idx - 1;
+                            let mut pos = out_idx - out_base_idx - 1;
+                            // println!("pos = {}", pos);
                             let mut l_mask = 0xFFF;
                             let mut o_shift = 12;
                             while pos >= 0x10 {
@@ -69,11 +73,9 @@ pub fn decompress(
 
                             length = (flag & l_mask) + 3;
                             offset = (flag >> o_shift) + 1;
-
                             if length >= offset {
                                 let count = (0xfff / offset) + 1;
                                 if offset > out_idx {
-                                    println!("[1] Corrupted out_idx = {} offset = {}", out_idx, offset);
                                     return Err(Error::CorruptedData);
                                 }
 
@@ -95,10 +97,8 @@ pub fn decompress(
                             } else {
                                 for _i in 0..length {
                                     if offset > out_idx {
-                                        println!("[2] Corrupted out_idx = {} offset = {}", out_idx, offset);
                                         return Err(Error::CorruptedData);
                                     }
-                    
                                     out_buf.push(out_buf[out_idx - offset]);
                                     out_idx += mem::size_of::<u8>();
                                 }
@@ -108,13 +108,16 @@ pub fn decompress(
                 }
             } else {
                 // Not compressed
-                for _i in 0..length {
+                for _i in 0..block_len {
                     out_buf.push(in_buf[in_idx]);
                     out_idx += mem::size_of::<u8>();
                     in_idx += mem::size_of::<u8>();
                 }
             }
         }
+
+        in_idx = in_chunk_base + 2 + block_len;
+        block_id += 1;
     }
 
     Ok(out_buf)
