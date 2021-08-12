@@ -26,7 +26,7 @@ pub fn decompress(
     let mut offset:     usize;
 
     let mut out_buf: Vec<u8> = Vec::new();
-    let mut block_id = 0;
+    let mut _block_id = 0;
     while in_idx < in_buf.len() {
         let in_chunk_base = in_idx;
         load16le!(header, in_buf, in_idx);
@@ -62,7 +62,6 @@ pub fn decompress(
                             in_idx += mem::size_of::<u16>();
 
                             let mut pos = out_idx - out_base_idx - 1;
-                            // println!("pos = {}", pos);
                             let mut l_mask = 0xFFF;
                             let mut o_shift = 12;
                             while pos >= 0x10 {
@@ -117,7 +116,7 @@ pub fn decompress(
         }
 
         in_idx = in_chunk_base + 2 + block_len;
-        block_id += 1;
+        _block_id += 1;
     }
 
     Ok(out_buf)
