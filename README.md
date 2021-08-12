@@ -44,6 +44,9 @@ const TEST_DATA: &'static [u8] = &[
                 0x65, 0x66, 0x67, 0x68, 0x69, 0x6a, 0x6b, 0x6c,
                 0x6d, 0x6e, 0x6f, 0x70, 0x71, 0x72, 0x73, 0x74,
                 0x75, 0x76, 0x77, 0x78, 0x79, 0x7a ];
+
+const TEST_LZNT1_COMPRESSED_DATA: &'static [u8] = include_bytes!("block1.compressed.bin");
+
 fn main() {
     let uncompressed = lzxpress::data::decompress(TEST_DATA).unwrap();
 
@@ -56,5 +59,8 @@ fn main() {
     if let Ok(s) = str::from_utf8(&uncompressed2) {
         println!("{}", s);
     }
+
+    // LZNT1
+    let uncompressed_lznt1 = lzxpress::lznt1::decompress(TEST_LZNT1_COMPRESSED_DATA).unwrap();
 }
 ```
