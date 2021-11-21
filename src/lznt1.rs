@@ -25,7 +25,8 @@ pub fn decompress(
     let mut block_len:  usize;
     let mut offset:     usize;
 
-    let mut out_buf: Vec<u8> = Vec::new();
+    let mut out_buf: Vec<u8> = Vec::with_capacity(in_buf.len());
+
     let mut _block_id = 0;
     while in_idx < in_buf.len() {
         let in_chunk_base = in_idx;
@@ -81,17 +82,36 @@ pub fn decompress(
                                 let chunk_pos = out_idx - offset;
                                 let chunk_len = offset;
 
+                                /*
+                                let max_tmp = count*chunk_len;
                                 // The two loops below can probably be rewritten in a more human readable format.
-                                let mut tmp: Vec<u8> = Vec::new();
+                                let mut tmp: Vec<u8> = Vec::with_capacity(max_tmp);
+                                if max_tmp > 4160 {
+                                    println!("capacity = {}", count*chunk_len);
+                                }
                                 for _i in 0..count {
                                     for _j in 0..chunk_len {
                                         tmp.push(out_buf[chunk_pos + _j]);
                                     }
                                 }
+                                */
 
-                                for _i in 0..length {
-                                    out_buf.push(tmp[_i]);
-                                    out_idx += mem::size_of::<u8>();
+                                let mut x = 0;
+                                while x < length {
+                                    for _i in 0..count {
+                                        for _j in 0..chunk_len {
+                                            out_buf.push(out_buf[chunk_pos + _j]);
+                                            out_idx += mem::size_of::<u8>();
+                                            x += 1;
+                                            if x >= length {
+                                                break;
+                                            }
+                                        }
+
+                                        if x >= length {
+                                            break;
+                                        }
+                                    }
                                 }
                             } else {
                                 for _i in 0..length {
