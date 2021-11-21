@@ -1,7 +1,3 @@
-#![feature(test)]
-extern crate test;
-use test::Bencher;
-
 extern crate lzxpress;
 
 use std::str;
@@ -86,11 +82,6 @@ mod tests {
 
         assert!(uncompressed.len() == TEST_STRING3.len(), "uncompressed.len = {}, TEST_STRING.len = {}", uncompressed.len(), TEST_STRING3.len());
         assert_eq!(uncompressed, TEST_STRING3.as_bytes());
-    }
-
-    #[bench]
-    fn bench_decompress4(b: &mut Bencher) {
-        b.iter(|| lzxpress::lznt1::decompress(TEST_LZNT1_COMPRESSED_DATA).unwrap());
     }
 
     #[test]
