@@ -17,6 +17,21 @@ pub fn decompress(
     in_buf: &[u8]
 ) -> Result<Vec<u8>, Error>
 {
+    let mut out_buf: Vec<u8> = Vec::with_capacity(in_buf.len());
+    
+    match decompress2(in_buf, &mut out_buf) {
+        Err(e) => println!("{:?}", e),
+        _ => ()
+    }
+
+    Ok(out_buf)
+}
+
+pub fn decompress2(
+    in_buf: &[u8],
+    out_buf: &mut Vec<u8>
+) -> Result<(), Error>
+{
     let mut out_idx: usize = 0;
     let mut in_idx:  usize = 0;
 
@@ -24,8 +39,6 @@ pub fn decompress(
     let mut length:     usize;
     let mut block_len:  usize;
     let mut offset:     usize;
-
-    let mut out_buf: Vec<u8> = Vec::with_capacity(in_buf.len());
 
     let mut _block_id = 0;
     while in_idx < in_buf.len() {
@@ -125,5 +138,5 @@ pub fn decompress(
         _block_id += 1;
     }
 
-    Ok(out_buf)
+    Ok(())
 }
