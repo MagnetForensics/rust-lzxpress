@@ -82,20 +82,6 @@ pub fn decompress(
                                 let chunk_pos = out_idx - offset;
                                 let chunk_len = offset;
 
-                                /*
-                                let max_tmp = count*chunk_len;
-                                // The two loops below can probably be rewritten in a more human readable format.
-                                let mut tmp: Vec<u8> = Vec::with_capacity(max_tmp);
-                                if max_tmp > 4160 {
-                                    println!("capacity = {}", count*chunk_len);
-                                }
-                                for _i in 0..count {
-                                    for _j in 0..chunk_len {
-                                        tmp.push(out_buf[chunk_pos + _j]);
-                                    }
-                                }
-                                */
-
                                 let mut x = 0;
                                 while x < length {
                                     for _i in 0..count {
