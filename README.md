@@ -30,7 +30,7 @@ By default, LZXpress on Windows uses the Plain LZ77 Algorithm. You can read more
 Cargo.toml:
 ```toml
 [dependencies]
-rust-lzxpress = "0.6.5"
+rust-lzxpress = "0.7.0"
 ```
 main.rs:
 ```Rust

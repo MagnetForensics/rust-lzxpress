@@ -1,6 +1,6 @@
 [package]
 name = "rust-lzxpress"
-version = "0.6.5"
+version = "0.7.0"
 authors = ["Matt Suiche <msuiche@comae.com>"]
 description = "Simple interface for Microsoft LZXpress decompression."
 edition = "2018"
