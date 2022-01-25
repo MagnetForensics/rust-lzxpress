@@ -177,4 +177,5 @@ mod tests {
         assert!(uncompressed.len() == 0x100000, "uncompressed.len = {} (expected len = 0x10000)", uncompressed.len());
         assert_eq!(uncompressed, TEST_LZNT1_UNCOMPRESSED_DATA);
     }
+
 }

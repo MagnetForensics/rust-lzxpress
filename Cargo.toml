@@ -15,3 +15,6 @@ license = "MIT"
 name = "lzxpress"
 
 [dependencies]
+
+[target.'cfg(windows)'.dependencies]
+ntapi = "0.3.6"

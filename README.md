@@ -64,3 +64,24 @@ fn main() {
     let uncompressed_lznt1 = lzxpress::lznt1::decompress(TEST_LZNT1_COMPRESSED_DATA).unwrap();
 }
 ```
+
+### Benchmarks
+This rust implementation is currently 100% slower than the native ntdll rtl RtlDecompressBuffer() implementation.
+
+```
+cargo +nightly bench
+    Finished bench [optimized] target(s) in 0.01s
+     Running unittests (target\release\deps\lzxpress-436fe5c97e99810a.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests (target\release\deps\bench-c027f16f109038ee.exe)
+
+running 2 tests
+test bench_lznt1_decompress     ... bench:   2,828,257 ns/iter (+/- 268,490)
+test bench_lznt1_decompress_rtl ... bench:   1,350,267 ns/iter (+/- 151,351)
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 2 measured; 0 filtered out; finished in 12.14s
+```
