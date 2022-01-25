@@ -27,6 +27,8 @@ fn bench_lznt1_decompress_rtl(b: &mut Bencher) {
             let pdst = dst.as_mut_ptr();
 
             let _ntstatus = RtlDecompressBuffer(compression_format_lznt1 | compression_engine_standard, pdst, dstlen, psrc, srclen, &mut dstlen2);
+
+            dst.set_len(dstlen2 as usize);
         };
     });
 }
@@ -39,6 +41,32 @@ fn bench_lznt1_decompress(b: &mut Bencher) {
         let _uncompressed = lzxpress::lznt1::decompress(compressed_data).unwrap();
     });
 }
+
+#[bench]
+fn bench_lznt1_decompress2_push(b: &mut Bencher) {
+    let compressed_data = include_bytes!("../tests/block1.compressed.bin");
+
+    b.iter(|| {
+        let dstlen = 0x100000;
+        let mut out_buf: Vec<u8> = Vec::with_capacity(dstlen);
+        let _uncompressed = lzxpress::lznt1::decompress2_push(compressed_data, &mut out_buf).unwrap();
+    });
+}
+
+#[bench]
+fn bench_lznt1_decompress2_no_push(b: &mut Bencher) {
+    let compressed_data = include_bytes!("../tests/block1.compressed.bin");
+
+    b.iter(|| {
+        let dstlen = 0x100000;
+        let mut out_buf: Vec<u8> = Vec::with_capacity(dstlen);
+        unsafe {
+            out_buf.set_len(dstlen);
+        }
+        let _uncompressed = lzxpress::lznt1::decompress2_no_push(compressed_data, &mut out_buf).unwrap();
+    });
+}
+
 
 #[bench]
 #[cfg(windows)]

@@ -178,4 +178,34 @@ mod tests {
         assert_eq!(uncompressed, TEST_LZNT1_UNCOMPRESSED_DATA);
     }
 
+    
+    #[test]
+    #[cfg(windows)]
+    fn test_lznt1_decompress_vs_rtl() {
+        unsafe {
+            let uncompressed_local = lzxpress::lznt1::decompress(TEST_LZNT1_COMPRESSED_DATA).unwrap();
+
+            let compression_format_lznt1 = 0x0002 as u16;
+            let compression_engine_standard = 0x0000 as u16;
+            use ntapi::ntrtl::{RtlDecompressBuffer};
+
+            let mut mutable_compressed_data = TEST_LZNT1_COMPRESSED_DATA.to_vec();
+            let psrc = mutable_compressed_data.as_mut_ptr();
+            let srclen = mutable_compressed_data.len() as u32;
+
+            let dstlen = 0x100000;
+            let mut dstlen2: u32 = 0;
+
+            let mut uncompressed_rtl = Vec::with_capacity(dstlen as usize);
+            let pdst = uncompressed_rtl.as_mut_ptr();
+
+            let _ntstatus = RtlDecompressBuffer(compression_format_lznt1 | compression_engine_standard, pdst, dstlen, psrc, srclen, &mut dstlen2);
+            uncompressed_rtl.set_len(dstlen2 as usize);
+
+            assert!(dstlen == dstlen2, "dstlen = {} and dstlen2 = {})", dstlen, dstlen2);
+            assert!(uncompressed_local.len() == uncompressed_rtl.len(), "uncompressed_local.len = {} and uncompressed_rtl = {})", uncompressed_local.len(), uncompressed_rtl.len());
+            assert_eq!(uncompressed_local, uncompressed_rtl);
+        }
+
+    }
 }
