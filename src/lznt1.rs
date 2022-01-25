@@ -155,19 +155,28 @@ pub fn decompress2_no_push(
     let mut offset:     usize;
 
     let mut _block_id = 0;
-    while in_idx < in_buf.len() {
+
+    // We don't want to compute those values at each round.
+    let in_buf_max_size = in_buf.len();
+    let out_buf_max_size = out_buf.len();
+
+    if out_buf_max_size == 0 || out_buf_max_size < in_buf_max_size {
+        return Err(Error::MemLimit);
+    }
+
+    while in_idx < in_buf_max_size {
         let in_chunk_base = in_idx;
         load16le!(header, in_buf, in_idx);
         in_idx += mem::size_of::<u16>();
         block_len = (header & 0xfff) + 1;
-        if block_len > (in_buf.len() - in_idx) {
+        if block_len > (in_buf_max_size - in_idx) {
             return Err(Error::MemLimit);
         } else {
             if header & LZNT1_COMPRESSED_FLAG != 0 {
                 let in_base_idx = in_idx;
                 let out_base_idx = out_idx;
                 while (in_idx - in_base_idx) < block_len {
-                    if in_idx >= in_buf.len() {
+                    if in_idx >= in_buf_max_size {
                         break;
                     }
                     let flags = in_buf[in_idx];
@@ -175,16 +184,19 @@ pub fn decompress2_no_push(
 
                     for n in 0..8 {
                         if ((flags >> n) & 1) == 0 {
-                            if in_idx >= in_buf.len() || (in_idx - in_base_idx) >= block_len {
+                            if in_idx >= in_buf_max_size || (in_idx - in_base_idx) >= block_len {
                                 break;
                             }
                             // out_buf.push(in_buf[in_idx]);
+                            if out_idx >= out_buf_max_size {
+                                return Err(Error::MemLimit);
+                            }
                             out_buf[out_idx] = in_buf[in_idx];
                             out_idx += mem::size_of::<u8>();
                             in_idx += mem::size_of::<u8>();
                         } else {
                             let flag;
-                            if in_idx >= in_buf.len() || (in_idx - in_base_idx) >= block_len {
+                            if in_idx >= in_buf_max_size || (in_idx - in_base_idx) >= block_len {
                                 break;
                             }
                             load16le!(flag, in_buf, in_idx);
@@ -215,6 +227,9 @@ pub fn decompress2_no_push(
                                     for _i in 0..count {
                                         for _j in 0..chunk_len {
                                             // out_buf.push(out_buf[chunk_pos + _j]);
+                                            if out_idx >= out_buf_max_size {
+                                                return Err(Error::MemLimit);
+                                            }
                                             out_buf[out_idx] = out_buf[chunk_pos + _j];
                                             out_idx += mem::size_of::<u8>();
                                             x += 1;
@@ -234,6 +249,9 @@ pub fn decompress2_no_push(
                                         return Err(Error::CorruptedData);
                                     }
                                     // out_buf.push(out_buf[out_idx - offset]);
+                                    if out_idx >= out_buf_max_size {
+                                        return Err(Error::MemLimit);
+                                    }
                                     out_buf[out_idx] = out_buf[out_idx - offset];
                                     out_idx += mem::size_of::<u8>();
                                 }
@@ -245,6 +263,9 @@ pub fn decompress2_no_push(
                 // Not compressed
                 for _i in 0..block_len {
                     // out_buf.push(in_buf[in_idx]);
+                    if out_idx >= out_buf_max_size {
+                        return Err(Error::MemLimit);
+                    }
                     out_buf[out_idx] = in_buf[in_idx];
                     out_idx += mem::size_of::<u8>();
                     in_idx += mem::size_of::<u8>();
