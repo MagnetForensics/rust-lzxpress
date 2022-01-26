@@ -43,6 +43,16 @@ const TEST_LZNT1_DATA1: &'static [u8] = &[
 const TEST_LZNT1_COMPRESSED_DATA: &'static [u8] = include_bytes!("block1.compressed.bin");
 const TEST_LZNT1_UNCOMPRESSED_DATA: &'static [u8] = include_bytes!("block1.uncompressed.bin");
 
+extern "C" {
+    fn decompress_lznt1(
+       in_buf: *const u8,
+       in_buf_max_size: i32,
+       out_buf: *mut u8,
+       out_buf_max_size: i32,
+       pout_buf_size: *mut i32
+   ) -> bool;
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -177,8 +187,7 @@ mod tests {
         assert!(uncompressed.len() == 0x100000, "uncompressed.len = {} (expected len = 0x10000)", uncompressed.len());
         assert_eq!(uncompressed, TEST_LZNT1_UNCOMPRESSED_DATA);
     }
-
-    
+ 
     #[test]
     #[cfg(windows)]
     fn test_lznt1_decompress_vs_rtl() {
@@ -205,6 +214,65 @@ mod tests {
             assert!(dstlen == dstlen2, "dstlen = {} and dstlen2 = {})", dstlen, dstlen2);
             assert!(uncompressed_local.len() == uncompressed_rtl.len(), "uncompressed_local.len = {} and uncompressed_rtl = {})", uncompressed_local.len(), uncompressed_rtl.len());
             assert_eq!(uncompressed_local, uncompressed_rtl);
+        }
+    }
+
+     
+    #[test]
+    #[cfg(windows)]
+    fn test_lznt1_decompress_vs_no_push_optz() {
+        unsafe {
+            let uncompressed_local = lzxpress::lznt1::decompress(TEST_LZNT1_COMPRESSED_DATA).unwrap();
+
+            let dstlen = 0x100000;
+            let mut out_buf: Vec<u8> = Vec::with_capacity(dstlen); 
+            out_buf.set_len(dstlen);
+
+            let _res = lzxpress::lznt1::decompress2_no_push(
+                TEST_LZNT1_COMPRESSED_DATA,
+                &mut out_buf
+            );
+
+            assert!(uncompressed_local.len() == out_buf.len(),
+                "uncompressed_local.len = {} and out_buf = {})",
+                uncompressed_local.len(),
+                out_buf.len());
+            assert_eq!(uncompressed_local, out_buf);
+        }
+
+    }
+
+    #[test]
+    #[cfg(windows)]
+    fn test_lznt1_decompress_vs_cpp() {
+        unsafe {
+            let uncompressed_local = lzxpress::lznt1::decompress(TEST_LZNT1_COMPRESSED_DATA).unwrap();
+            
+            let psrc = TEST_LZNT1_COMPRESSED_DATA.as_ptr();
+            let srclen = TEST_LZNT1_COMPRESSED_DATA.len() as i32;
+
+            let dstlen = 0x100000;
+            let mut dstlen2: i32 = 0;
+
+            let mut dst = Vec::with_capacity(dstlen as usize);
+            let pdst = dst.as_mut_ptr();
+            let _status = decompress_lznt1(
+                psrc,
+                srclen,
+                pdst,
+                dstlen,
+                &mut dstlen2);
+            dst.set_len(dstlen2 as usize);
+
+            assert!(dstlen == dstlen2, "dstlen = {} and dstlen2 = {} and srclen = {}",
+                dstlen,
+                dstlen2,
+                srclen);
+            assert!(uncompressed_local.len() == dst.len(), 
+                "uncompressed_local.len = {} and uncompressed_rtl = {})",
+                uncompressed_local.len(),
+                dst.len());
+            assert_eq!(uncompressed_local, dst);
         }
 
     }

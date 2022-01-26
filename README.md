@@ -66,25 +66,16 @@ fn main() {
 ```
 
 ### Benchmarks
-This rust implementation of LZNT1 decompression is currently 100% slower than the native ntdll rtl RtlDecompressBuffer() implementation.
+This rust implementation of LZNT1 decompression is currently twice slower than the native ntdll rtl RtlDecompressBuffer() implementation. 
+And still is 50% slower thant the equivalent implemented in C under `tests/lznt1.c!decompress_lznt1()`.
 
 ```
-$ cargo +nightly bench
-   Compiling rust-lzxpress v0.7.1 (C:\Users\msuiche\Documents\dev\rust-lzxpress)
-    Finished bench [optimized] target(s) in 0.57s
-     Running unittests (target\release\deps\lzxpress-436fe5c97e99810a.exe)
-
-running 0 tests
-
-test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-     Running unittests (target\release\deps\bench-c027f16f109038ee.exe)
-
-running 4 tests
-test bench_lznt1_decompress        ... bench:   2,864,437 ns/iter (+/- 513,678)
-test bench_lznt1_decompress_rtl    ... bench:   1,330,032 ns/iter (+/- 66,365)
-test bench_lznxpress_decompress    ... bench:         150 ns/iter (+/- 2)
-test bench_lzxpress_decompress_rtl ... bench:       6,018 ns/iter (+/- 335)
-
-test result: ok. 0 passed; 0 failed; 0 ignored; 4 measured; 0 filtered out; finished in 21.84s
+running 7 tests
+test bench_lznt1_decompress          ... bench:   5,985,430 ns/iter (+/- 348,885)
+test bench_lznt1_decompress2_no_push ... bench:   4,526,545 ns/iter (+/- 32,742)
+test bench_lznt1_decompress2_push    ... bench:   5,904,550 ns/iter (+/- 444,512)
+test bench_lznt1_decompress_cpp      ... bench:   3,947,145 ns/iter (+/- 111,184)
+test bench_lznt1_decompress_rtl      ... bench:   2,838,820 ns/iter (+/- 175,803)
+test bench_lzxpress_decompress       ... bench:         320 ns/iter (+/- 14)
+test bench_lzxpress_decompress_rtl   ... bench:      16,299 ns/iter (+/- 3,853)
 ```

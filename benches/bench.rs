@@ -5,6 +5,16 @@ extern crate lzxpress;
 
 use test::Bencher;
 
+extern "C" {
+     fn decompress_lznt1(
+        in_buf: *const u8,
+        in_buf_max_size: i32,
+        out_buf: *mut u8,
+        out_buf_max_size: i32,
+        pout_buf_size: *mut i32
+    ) -> bool;
+}
+
 #[bench]
 #[cfg(windows)]
 fn bench_lznt1_decompress_rtl(b: &mut Bencher) {
@@ -28,6 +38,32 @@ fn bench_lznt1_decompress_rtl(b: &mut Bencher) {
 
             let _ntstatus = RtlDecompressBuffer(compression_format_lznt1 | compression_engine_standard, pdst, dstlen, psrc, srclen, &mut dstlen2);
 
+            dst.set_len(dstlen2 as usize);
+        };
+    });
+}
+
+#[bench]
+fn bench_lznt1_decompress_cpp(b: &mut Bencher) {
+    let compressed_data = include_bytes!("../tests/block1.compressed.bin");
+
+    b.iter(|| {
+        let _ret = unsafe {
+            let psrc = compressed_data.as_ptr();
+            let srclen = compressed_data.len() as i32;
+
+            let dstlen = 0x100000;
+            let mut dstlen2: i32 = 0;
+
+            let mut dst = Vec::with_capacity(dstlen as usize);
+            let pdst = dst.as_mut_ptr();
+
+            let _status = decompress_lznt1(
+                psrc,
+                srclen,
+                pdst,
+                dstlen,
+                &mut dstlen2);
             dst.set_len(dstlen2 as usize);
         };
     });

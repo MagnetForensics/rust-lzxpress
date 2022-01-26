@@ -18,3 +18,6 @@ name = "lzxpress"
 
 [target.'cfg(windows)'.dependencies]
 ntapi = "0.3.6"
+
+[build-dependencies]
+cc = "1.0"
