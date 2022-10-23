@@ -1,48 +1,38 @@
-use std::mem;
 use std::cmp;
+use std::mem;
 
 pub use crate::error::Error;
 
-macro_rules! store32le{
-       ($dst:expr,$idx:expr,$val:expr)=>{
-           {
-            $dst[$idx + 0] = $val as u8;
-            $dst[$idx + 1] = ($val >> 8) as u8;
-            $dst[$idx + 2] = ($val >> 16) as u8;
-            $dst[$idx + 3] = ($val >> 24) as u8;
-           }
-       }
-   }
-
-macro_rules! load16le{
-    ($dst:expr,$src:expr,$idx:expr)=>{
-        {
-            $dst = (u32::from($src[$idx + 1]) << 8
-            | u32::from($src[$idx])) as usize;
-        }
-    }
+macro_rules! store32le {
+    ($dst:expr,$idx:expr,$val:expr) => {{
+        $dst[$idx + 0] = $val as u8;
+        $dst[$idx + 1] = ($val >> 8) as u8;
+        $dst[$idx + 2] = ($val >> 16) as u8;
+        $dst[$idx + 3] = ($val >> 24) as u8;
+    }};
 }
 
-macro_rules! load32le{
-    ($dst:expr,$src:expr,$idx:expr)=>{
-        {
-            $dst = ((u32::from($src[$idx + 3]) << 24)
+macro_rules! load16le {
+    ($dst:expr,$src:expr,$idx:expr) => {{
+        $dst = (u32::from($src[$idx + 1]) << 8 | u32::from($src[$idx])) as usize;
+    }};
+}
+
+macro_rules! load32le {
+    ($dst:expr,$src:expr,$idx:expr) => {{
+        $dst = ((u32::from($src[$idx + 3]) << 24)
             | (u32::from($src[$idx + 2]) << 16)
-            | (u32::from($src[$idx + 1]) << 8) 
+            | (u32::from($src[$idx + 1]) << 8)
             | u32::from($src[$idx])) as usize;
-        }
-    }
+    }};
 }
 
-pub fn decompress(
-    in_buf: &[u8]
-) -> Result<Vec<u8>, Error>
-{
-    let mut out_idx:    usize = 0;
-    let mut in_idx:     usize = 0;
+pub fn decompress(in_buf: &[u8]) -> Result<Vec<u8>, Error> {
+    let mut out_idx: usize = 0;
+    let mut in_idx: usize = 0;
     let mut nibble_idx: usize = 0;
 
-    let mut flags:      usize = 0;
+    let mut flags: usize = 0;
     let mut flag_count: usize = 0;
 
     let mut length: usize;
@@ -83,7 +73,7 @@ pub fn decompress(
             in_idx += mem::size_of::<u16>();
 
             offset = (length / 8) + 1;
-            length = length % 8;
+            length %= 8;
 
             if length == 7 {
                 if nibble_idx == 0 {
@@ -149,29 +139,25 @@ pub fn decompress(
     Ok(out_buf)
 }
 
-pub fn compress(
-    in_buf: &[u8]
-) -> Result<Vec<u8>, Error>
-{
-
-    let mut in_idx:    usize = 0;
-    let mut out_idx:   usize;
+pub fn compress(in_buf: &[u8]) -> Result<Vec<u8>, Error> {
+    let mut in_idx: usize = 0;
+    let mut out_idx: usize;
     let mut byte_left: usize;
 
-    let mut max_off:   usize;
+    let mut max_off: usize;
     let mut match_off: usize;
 
-    let mut max_len:  usize;
+    let mut max_len: usize;
     let mut best_len: usize;
 
-    let mut flags:        u32 = 0;
-    let mut flag_count:   u32 = 0;
+    let mut flags: u32 = 0;
+    let mut flag_count: u32 = 0;
     let mut flag_out_off: usize = 0;
     let mut nibble_index: usize = 0;
 
     let mut metadata_size: usize;
-    let mut metadata:      usize;
-    let mut _dest_off:     usize;
+    let mut metadata: usize;
+    let mut _dest_off: usize;
 
     let mut str1_off: usize;
     let mut str2_off: usize;
@@ -247,7 +233,7 @@ pub fn compress(
 
             if match_len < 7 {
                 // Classical meta-data
-                metadata = (match_off  << 3) + match_len;
+                metadata = (match_off << 3) + match_len;
                 out_buf.push(metadata as u8);
                 out_buf.push((metadata >> 8) as u8);
                 metadata_size += mem::size_of::<u16>();
@@ -272,23 +258,21 @@ pub fn compress(
 
                         has_extra_len = true;
                     }
+                } else if match_len < 15 {
+                    out_buf[nibble_index] |= (match_len << 4) as u8;
+                    nibble_index = 0;
                 } else {
-                    if match_len < 15 {
-                        out_buf[nibble_index] |= (match_len << 4) as u8;
-                        nibble_index = 0;
-                    } else {
-                        out_buf[nibble_index] |= (15 << 4) as u8;
-                        nibble_index = 0;
+                    out_buf[nibble_index] |= (15 << 4) as u8;
+                    nibble_index = 0;
 
-                        has_extra_len = true;
-                    }
+                    has_extra_len = true;
                 }
 
                 if has_extra_len {
                     match_len -= 15;
 
                     if match_len < 255 {
-                        out_buf.push(match_len as u8); 
+                        out_buf.push(match_len as u8);
                         metadata_size += mem::size_of::<u8>();
                     } else {
                         out_buf.push(255);
