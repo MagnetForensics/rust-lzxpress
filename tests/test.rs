@@ -15,6 +15,10 @@ const TEST_OSSFUZZ_20083_DATA: &[u8] =
 const TEST_OSSFUZZ_5698056963227648_DATA: &[u8] =
     include_bytes!("clusterfuzz-testcase-minimized-fuzz_ndr_drsuapi_TYPE_OUT-5698056963227648");
 
+const TEST_FAST_FFFFFFFF_COMPRESSED_DATA: &[u8] = include_bytes!("fast.compressed.ffffffff.bin");
+const TEST_FAST_FFFFFFFF_UNCOMPRESSED_DATA: &[u8] =
+    include_bytes!("fast.uncompressed.ffffffff.bin");
+
 // Examples: https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-xca/72da4f8d-2ba3-437d-b772-2e4173713a0b?redirectedfrom=MSDN
 const TEST_STRING2: &str = "abcdefghijklmnopqrstuvwxyz";
 const TEST_DATA2: &[u8] = &[
@@ -101,6 +105,14 @@ mod tests {
             TEST_STRING3.len()
         );
         assert_eq!(uncompressed, TEST_STRING3.as_bytes());
+    }
+
+    #[test]
+    fn test_decompress4() {
+        assert_eq!(
+            &lzxpress::data::decompress(TEST_FAST_FFFFFFFF_COMPRESSED_DATA).unwrap(),
+            TEST_FAST_FFFFFFFF_UNCOMPRESSED_DATA
+        );
     }
 
     #[test]

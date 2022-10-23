@@ -65,7 +65,12 @@ pub fn decompress(in_buf: &[u8]) -> Result<Vec<u8>, Error> {
             in_idx += mem::size_of::<u8>();
             out_idx += mem::size_of::<u8>();
         } else {
-            if (in_idx + 1) >= in_buf.len() {
+            if in_idx == in_buf.len() {
+                // [MS-XCA] - v20210625, 2.4.4
+                break;
+            }
+
+            if (in_idx + 1) > in_buf.len() {
                 return Err(Error::MemLimit);
             }
 
@@ -77,7 +82,7 @@ pub fn decompress(in_buf: &[u8]) -> Result<Vec<u8>, Error> {
 
             if length == 7 {
                 if nibble_idx == 0 {
-                    if in_idx >= in_buf.len() {
+                    if in_idx > in_buf.len() {
                         return Err(Error::MemLimit);
                     }
 
@@ -85,7 +90,7 @@ pub fn decompress(in_buf: &[u8]) -> Result<Vec<u8>, Error> {
                     nibble_idx = in_idx;
                     in_idx += mem::size_of::<u8>();
                 } else {
-                    if nibble_idx >= in_buf.len() {
+                    if nibble_idx > in_buf.len() {
                         return Err(Error::MemLimit);
                     }
 
@@ -94,7 +99,7 @@ pub fn decompress(in_buf: &[u8]) -> Result<Vec<u8>, Error> {
                 }
 
                 if length == 15 {
-                    if in_idx >= in_buf.len() {
+                    if in_idx > in_buf.len() {
                         return Err(Error::MemLimit);
                     }
 
@@ -102,7 +107,7 @@ pub fn decompress(in_buf: &[u8]) -> Result<Vec<u8>, Error> {
                     in_idx += mem::size_of::<u8>();
 
                     if length == 255 {
-                        if (in_idx + 1) >= in_buf.len() {
+                        if (in_idx + 1) > in_buf.len() {
                             return Err(Error::MemLimit);
                         }
 
